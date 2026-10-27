@@ -1,0 +1,22 @@
+{
+  "name": "hotelpro",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HotelPro hotel booking and management system",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n server,client -c blue,green \"npm:dev --workspace=server\" \"npm:dev --workspace=client\"",
+    "start": "npm run start --workspace=server",
+    "seed": "npm run seed --workspace=server",
+    "client:build": "npm run build --workspace=client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}
