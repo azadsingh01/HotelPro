@@ -12,12 +12,11 @@ const roomThemes = {
 export default function RoomCard({ room, searchParams = '' }) {
   return (
     <article className="room-card card h-100">
-      <div className={`room-art ${roomThemes[room.type] ?? 'room-art-sage'}`} aria-hidden="true">
-        <span className="room-art-label">{room.type?.replaceAll('_', ' ')}</span>
-        <span className="room-art-window" />
-        <span className="room-art-bed" />
-        <span className="room-art-plant">✦</span>
-      </div>
+      {room.photos?.[0] ? <img className="room-photo" src={room.photos[0]} alt={`${room.type} room ${room.roomNumber}`} loading="lazy" /> : (
+        <div className={`room-art ${roomThemes[room.type] ?? 'room-art-sage'}`} aria-hidden="true">
+          <span className="room-art-label">{room.type?.replaceAll('_', ' ')}</span><span className="room-art-window" /><span className="room-art-bed" /><span className="room-art-plant">✦</span>
+        </div>
+      )}
       <div className="card-body d-flex flex-column p-4">
         <div className="d-flex align-items-start justify-content-between gap-3 mb-2">
           <div>
@@ -37,11 +36,11 @@ export default function RoomCard({ room, searchParams = '' }) {
         </div>
         <div className="mt-auto d-flex align-items-end justify-content-between gap-3">
           <p className="room-rate mb-0">
-            <strong>{formatCurrency(room.pricePerNight)}</strong>
+            <strong>{formatCurrency(room.rent)}</strong>
             <span> / night</span>
           </p>
           <Link className="btn btn-outline-dark rounded-pill px-3" to={`/rooms/${room.id}${searchParams}`}>
-            View room <span aria-hidden="true">↗</span>
+          Book room <span aria-hidden="true">↗</span>
           </Link>
         </div>
       </div>

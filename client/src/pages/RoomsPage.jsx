@@ -11,6 +11,7 @@ const roomTypes = [
   { value: 'single', label: 'Single' },
   { value: 'double', label: 'Double' },
   { value: 'twin', label: 'Twin' },
+  { value: 'deluxe', label: 'Deluxe' },
   { value: 'suite', label: 'Suite' },
   { value: 'family', label: 'Family' },
 ];
@@ -43,7 +44,20 @@ export default function RoomsPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    const params = Object.fromEntries(new URLSearchParams(queryString).entries());
+    const uiParams = new URLSearchParams(queryString);
+    if (!uiParams.has('checkIn') || !uiParams.has('checkOut')) {
+      setRooms([]);
+      setLoading(false);
+      setErrorMessage('');
+      return () => controller.abort();
+    }
+    const params = Object.fromEntries(['type', 'capacity'].flatMap((key) => (
+      uiParams.has(key) ? [[key, uiParams.get(key)]] : []
+    )));
+    if (uiParams.has('minPrice')) params.minRent = uiParams.get('minPrice');
+    if (uiParams.has('maxPrice')) params.maxRent = uiParams.get('maxPrice');
+    if (uiParams.has('checkIn')) params.fromdate = uiParams.get('checkIn');
+    if (uiParams.has('checkOut')) params.todate = uiParams.get('checkOut');
     setLoading(true);
     setErrorMessage('');
 
@@ -71,6 +85,16 @@ export default function RoomsPage() {
 
     if (Boolean(filters.checkIn) !== Boolean(filters.checkOut)) {
       showToast('Choose both check-in and check-out dates.', 'danger');
+      return;
+    }
+
+    if (!filters.checkIn || !filters.checkOut) {
+      showToast('Choose your dates first to check room availability.', 'danger');
+      return;
+    }
+
+    if (filters.checkIn && filters.checkIn < todayDateInput()) {
+      showToast('Check-in cannot be in the past.', 'danger');
       return;
     }
 
@@ -146,9 +170,9 @@ export default function RoomsPage() {
         <div className="row g-4 room-grid">
           {rooms.map((room) => <div className="col-sm-6 col-xl-4" key={room.id}><RoomCard room={room} searchParams={bookingQuery} /></div>)}
         </div>
-      ) : (
+      ) : filters.checkIn && filters.checkOut ? (
         <div className="empty-state"><span className="empty-state-mark">⌂</span><h3>No rooms match just yet</h3><p>Try a wider price range, different dates, or fewer guests.</p><button className="btn btn-outline-dark rounded-pill px-4" type="button" onClick={clearFilters}>Clear filters</button></div>
-      )}
+      ) : <div className="empty-state"><span className="empty-state-mark">⌂</span><h3>Choose your dates first</h3><p>Pick a check-in and check-out date to see available rooms.</p></div>}
     </section>
   );
 }

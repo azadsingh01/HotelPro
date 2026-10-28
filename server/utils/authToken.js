@@ -9,7 +9,7 @@ function getJwtSecret() {
   if (
     !secret
     || Buffer.byteLength(secret, 'utf8') < 32
-    || secret === 'replace-this-with-a-long-random-secret'
+    || secret.startsWith('replace-this-')
   ) {
     throw new ApiError(500, 'Set JWT_SECRET to a unique random value of at least 32 bytes.');
   }

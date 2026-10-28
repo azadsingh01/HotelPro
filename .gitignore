@@ -1,5 +1,9 @@
 node_modules/
 dist/
+build/
+logs/
+server/uploads/
+*.log
 coverage/
 .env
 .env.*
@@ -8,4 +12,3 @@ coverage/
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
-.env.example

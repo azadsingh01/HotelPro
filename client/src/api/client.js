@@ -3,7 +3,7 @@ import axios from 'axios';
 export const TOKEN_STORAGE_KEY = 'hotelpro-token';
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   headers: { 'Content-Type': 'application/json' },
   timeout: 15000,
 });
@@ -19,10 +19,15 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.data?.success === true && Object.hasOwn(response.data, 'data')) {
+      response.data = response.data.data;
+    }
+    return response;
+  },
   (error) => {
     const requestUrl = error.config?.url ?? '';
-    const isLoginRequest = requestUrl.endsWith('/auth/login');
+    const isLoginRequest = requestUrl.endsWith('/auth/login') || requestUrl.endsWith('/auth/admin-login');
     const requestAuthorization = error.config?.headers?.Authorization
       ?? error.config?.headers?.get?.('Authorization');
     const currentToken = localStorage.getItem(TOKEN_STORAGE_KEY);
@@ -42,7 +47,7 @@ api.interceptors.response.use(
 
 export function getApiErrorMessage(error, fallback = 'Something went wrong. Please try again.') {
   const responseData = error.response?.data;
-  const firstDetail = responseData?.details?.[0]?.message;
+  const firstDetail = (responseData?.data?.details ?? responseData?.details)?.[0]?.message;
 
   return firstDetail || responseData?.message || error.message || fallback;
 }

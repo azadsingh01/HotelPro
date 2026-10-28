@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { api } from '../api/client.js';
+import RoomCard from '../components/RoomCard.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { todayDateInput } from '../utils/format.js';
 
@@ -15,6 +17,21 @@ export default function HomePage() {
   const [checkIn, setCheckIn] = useState(todayDateInput());
   const [checkOut, setCheckOut] = useState(nextDate(todayDateInput()));
   const [guests, setGuests] = useState('2');
+  const [rooms, setRooms] = useState([]);
+  const [highlightIndex, setHighlightIndex] = useState(0);
+  const [previewLoading, setPreviewLoading] = useState(true);
+  const [previewError, setPreviewError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    api.get('/rooms')
+      .then(({ data }) => { if (active) setRooms(data.rooms); })
+      .catch(() => { if (active) { setRooms([]); setPreviewError('Room highlights are unavailable right now. Please try again later.'); } })
+      .finally(() => { if (active) setPreviewLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  const highlightedRoom = rooms.length ? rooms[highlightIndex % rooms.length] : null;
 
   function handleSearch(event) {
     event.preventDefault();
@@ -50,18 +67,15 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="hero-art" aria-label="A sunlit hotel room illustration">
-            <div className="hero-art-sun" />
-            <div className="hero-art-arch">
-              <div className="hero-art-window"><span /><span /><span /><span /></div>
-            </div>
-            <div className="hero-art-wall-frame"><i /><i /><i /></div>
-            <div className="hero-art-bed-back" />
-            <div className="hero-art-bed"><span /><span /></div>
-            <div className="hero-art-nightstand"><i /></div>
-            <div className="hero-art-plant"><i /><i /><i /><span /></div>
-            <div className="hero-art-caption"><span>01 / THE SLOW MORNING</span><strong>Room to exhale.</strong></div>
+          <div className="hero-art" aria-label="Featured hotel room carousel">
+            {highlightedRoom?.photos?.[0] ? <img className="hero-highlight-image" src={highlightedRoom.photos[0]} alt={`${highlightedRoom.type} room ${highlightedRoom.roomNumber}`} /> : <>
+              <div className="hero-art-sun" /><div className="hero-art-arch"><div className="hero-art-window"><span /><span /><span /><span /></div></div>
+              <div className="hero-art-wall-frame"><i /><i /><i /></div><div className="hero-art-bed-back" /><div className="hero-art-bed"><span /><span /></div>
+              <div className="hero-art-nightstand"><i /></div><div className="hero-art-plant"><i /><i /><i /><span /></div>
+            </>}
+            <div className="hero-art-caption"><span>{highlightedRoom ? `ROOM ${highlightedRoom.roomNumber} / ${highlightedRoom.type.toUpperCase()}` : '01 / THE SLOW MORNING'}<small>{highlightedRoom ? ` · $${highlightedRoom.rent} / NIGHT` : ''}</small></span><strong>{highlightedRoom ? 'Room to exhale.' : 'Room to exhale.'}</strong></div>
             <div className="hero-art-stamp">STAY<br />AWHILE</div>
+            {rooms.length > 1 && <div className="hero-carousel-controls"><button type="button" aria-label="Previous featured room" onClick={() => setHighlightIndex((index) => (index - 1 + rooms.length) % rooms.length)}>←</button><span>{highlightIndex + 1} / {rooms.length}</span><button type="button" aria-label="Next featured room" onClick={() => setHighlightIndex((index) => (index + 1) % rooms.length)}>→</button></div>}
           </div>
         </div>
 
@@ -86,7 +100,7 @@ export default function HomePage() {
         </form>
       </section>
 
-      <section className="container home-intro section-space">
+      <section className="container home-intro section-space" id="about">
         <div>
           <p className="eyebrow">A BETTER KIND OF GETAWAY</p>
           <h2>Good stays are<br />made of small things.</h2>
@@ -115,6 +129,11 @@ export default function HomePage() {
           <h3>Easy from the start</h3>
           <p>Find a room, book your dates, and arrive with one less thing to think about.</p>
         </article>
+      </section>
+
+      <section className="container home-room-preview section-space">
+        <div className="page-heading"><div><p className="eyebrow">A FEW GOOD PLACES TO STAY</p><h2 className="h1">Room highlights</h2></div><Link className="btn btn-outline-dark rounded-pill px-4" to="/rooms">Explore rooms ↗</Link></div>
+        {previewLoading ? <div className="inline-empty">Loading room highlights…</div> : previewError ? <div className="alert alert-warning" role="status">{previewError}</div> : rooms.length ? <div className="row g-4">{rooms.slice(0, 3).map((room) => <div className="col-md-6 col-xl-4" key={room.id}><RoomCard room={room} /></div>)}</div> : <div className="inline-empty">Rooms will appear here once they are added to the inventory.</div>}
       </section>
 
       <section className="container home-cta mb-5">

@@ -2,15 +2,12 @@ import cors from 'cors';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
-import './config/env.js';
-import { notFound } from './middleware/notFound.js';
-import authRoutes from './routes/auth.routes.js';
-import adminStatsRoutes from './routes/adminStats.routes.js';
-import bookingRoutes from './routes/booking.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
-import healthRoutes from './routes/health.routes.js';
-import paymentRoutes from './routes/payment.routes.js';
-import roomRoutes from './routes/room.routes.js';
+import { notFound } from './middleware/notFound.js';
+import { responseEnvelope } from './middleware/responseEnvelope.js';
+import { uploadDirectory } from './middleware/upload.js';
+import apiRoutes from './routes/api.routes.js';
+import './config/env.js';
 
 const app = express();
 
@@ -21,21 +18,29 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 app.use(helmet());
-app.use(cors({ origin: process.env.CLIENT_ORIGIN ?? 'http://localhost:5173' }));
+app.use(cors({
+  origin: process.env.CLIENT_ORIGIN || false,
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+}));
 app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(responseEnvelope);
+app.use('/uploads', express.static(uploadDirectory, {
+  setHeaders(response) {
+    response.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  },
+}));
 app.use(rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 100,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
+  message: { success: false, message: 'Too many requests. Try again later.', data: null },
 }));
 
-app.use('/api/health', healthRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/rooms', roomRoutes);
-app.use('/api/bookings', bookingRoutes);
-app.use('/api', paymentRoutes);
-app.use('/api/admin/stats', adminStatsRoutes);
+app.use('/api', apiRoutes);
 app.use(notFound);
 app.use(errorHandler);
 

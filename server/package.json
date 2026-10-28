@@ -7,7 +7,9 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "admin:create": "node scripts/create-admin.js",
-    "seed": "node seed.js"
+    "seed": "node seed.js",
+    "migrate": "node scripts/migrate.js",
+    "migrate:part-1": "node scripts/migrate.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
@@ -18,7 +20,8 @@
     "express-validator": "^7.2.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.18.0"
+    "mongoose": "^8.18.0",
+    "multer": "^2.5.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

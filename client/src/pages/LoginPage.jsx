@@ -4,8 +4,8 @@ import { getApiErrorMessage } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 
-export default function LoginPage() {
-  const { login } = useAuth();
+export default function LoginPage({ adminMode = false }) {
+  const { login, adminLogin } = useAuth();
   const showToast = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -17,10 +17,12 @@ export default function LoginPage() {
     setSubmitting(true);
 
     try {
-      const user = await login(form.email, form.password);
+      const user = adminMode
+        ? await adminLogin(form.email, form.password)
+        : await login(form.email, form.password);
       showToast(`Welcome back, ${user.name.split(' ')[0]}.`);
       const destination = location.state?.from;
-      navigate(destination ? `${destination.pathname}${destination.search ?? ''}` : user.role === 'admin' ? '/admin' : '/my-bookings', { replace: true });
+      navigate(destination ? `${destination.pathname}${destination.search ?? ''}` : user.userType === 'Admin' ? '/admin' : '/user', { replace: true });
     } catch (error) {
       showToast(getApiErrorMessage(error, 'We could not sign you in.'), 'danger');
     } finally {
@@ -32,13 +34,13 @@ export default function LoginPage() {
     <section className="container auth-page">
       <div className="auth-panel">
         <div className="auth-intro">
-          <p className="eyebrow">WELCOME BACK</p>
-          <h1>Good to see<br />you again.</h1>
-          <p>Sign in to find your next stay or pick up where you left off.</p>
+          <p className="eyebrow">{adminMode ? 'HOTELPRO OPERATIONS' : 'WELCOME BACK'}</p>
+          <h1>{adminMode ? <>Welcome<br />back.</> : <>Good to see<br />you again.</>}</h1>
+          <p>{adminMode ? 'Sign in to manage rooms, bookings, and guest accounts.' : 'Sign in to find your next stay or pick up where you left off.'}</p>
           <div className="auth-illustration" aria-hidden="true"><span /><span /><span /><i /></div>
         </div>
         <form className="auth-form" onSubmit={handleSubmit}>
-          <div className="mb-4"><span className="form-step">YOUR ACCOUNT</span><h2 className="h3 mt-2">Log in</h2></div>
+          <div className="mb-4"><span className="form-step">{adminMode ? 'ADMIN ACCOUNT' : 'YOUR ACCOUNT'}</span><h2 className="h3 mt-2">{adminMode ? 'Admin log in' : 'Log in'}</h2></div>
           <label className="form-label" htmlFor="login-email">Email address</label>
           <input
             className="form-control form-control-lg mb-3"
@@ -63,7 +65,11 @@ export default function LoginPage() {
           <button className="btn btn-dark btn-lg rounded-pill w-100" type="submit" disabled={submitting}>
             {submitting ? <><span className="spinner-border spinner-border-sm me-2" />Signing in…</> : 'Sign in'}
           </button>
-          <p className="auth-switch mt-4 mb-0">New to HotelPro? <Link to="/register">Create an account</Link></p>
+          {!adminMode ? (
+            <p className="auth-switch mt-4 mb-0">New to HotelPro? <Link to="/register">Create an account</Link><br /><Link to="/admin/login">Administrator login</Link></p>
+          ) : (
+            <p className="auth-switch mt-4 mb-0"><Link to="/login">Ordinary login</Link></p>
+          )}
         </form>
       </div>
     </section>

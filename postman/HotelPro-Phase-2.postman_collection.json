@@ -1,50 +1,72 @@
 {
   "info": {
-    "name": "HotelPro Phase 2 - Auth API",
-    "description": "Register a guest, log in, and fetch the current user's profile.",
+    "name": "HotelPro Part 2 API",
+    "description": "Ordinary/Admin signup and login, room search, bookings, and Admin management.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Register guest",
+      "name": "Sign up Ordinary",
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"name\": \"Morgan Lee\",\n  \"email\": \"morgan.lee@example.com\",\n  \"password\": \"HotelPro!2026\",\n  \"phone\": \"+14155550123\"\n}",
-          "options": { "raw": { "language": "json" } }
-        },
-        "url": "{{baseUrl}}/api/auth/register"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('register returns 201', function () { pm.response.to.have.status(201); });",
-              "const data = pm.response.json();",
-              "pm.test('response includes user and token', function () { pm.expect(data.user).to.be.an('object'); pm.expect(data.token).to.be.a('string'); });",
-              "if (data.token) pm.collectionVariables.set('token', data.token);"
-            ]
+          "raw": "{\n  \"name\": \"Morgan Lee\",\n  \"email\": \"morgan.lee@example.com\",\n  \"password\": \"HotelPro!2026\",\n  \"c_password\": \"HotelPro!2026\",\n  \"phone\": \"14155550123\",\n  \"userType\": \"Ordinary\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
           }
-        }
-      ]
+        },
+        "url": "{{baseUrl}}/api/auth/signup"
+      }
     },
     {
-      "name": "Login",
+      "name": "Sign up Admin (invitation code required)",
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Hotel Administrator\",\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\",\n  \"c_password\": \"{{adminPassword}}\",\n  \"phone\": \"14155550100\",\n  \"adminCode\": \"{{adminSignupCode}}\",\n  \"userType\": \"Admin\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/api/auth/signup"
+      }
+    },
+    {
+      "name": "Login Ordinary",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
         ],
         "body": {
           "mode": "raw",
           "raw": "{\n  \"email\": \"morgan.lee@example.com\",\n  \"password\": \"HotelPro!2026\"\n}",
-          "options": { "raw": { "language": "json" } }
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
         },
         "url": "{{baseUrl}}/api/auth/login"
       },
@@ -54,23 +76,33 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('login returns 200', function () { pm.response.to.have.status(200); });",
-              "const data = pm.response.json();",
-              "pm.test('response includes user and token', function () { pm.expect(data.user).to.be.an('object'); pm.expect(data.token).to.be.a('string'); });",
-              "if (data.token) pm.collectionVariables.set('token', data.token);"
+              "pm.test('login succeeds', function () { pm.response.to.have.status(200); });",
+              "pm.collectionVariables.set('ordinaryToken', pm.response.json().data.token);"
             ]
           }
         }
       ]
     },
     {
-      "name": "Get my profile",
+      "name": "Login Admin",
       "request": {
-        "method": "GET",
+        "method": "POST",
         "header": [
-          { "key": "Authorization", "value": "Bearer {{token}}" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
         ],
-        "url": "{{baseUrl}}/api/auth/profile"
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/api/auth/admin-login"
       },
       "event": [
         {
@@ -78,17 +110,222 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('profile returns 200', function () { pm.response.to.have.status(200); });",
-              "const data = pm.response.json();",
-              "pm.test('profile does not include a password', function () { pm.expect(data.user).to.be.an('object'); pm.expect(data.user).not.to.have.property('password'); });"
+              "pm.test('Admin login succeeds', function () { pm.response.to.have.status(200); });",
+              "pm.collectionVariables.set('adminToken', pm.response.json().data.token);"
             ]
           }
         }
       ]
+    },
+    {
+      "name": "Search available rooms",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/rooms?fromdate=2027-01-10&todate=2027-01-12&capacity=2"
+      }
+    },
+    {
+      "name": "Create room (Admin)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"roomNumber\": 204,\n  \"type\": \"double\",\n  \"description\": \"City view with a queen bed\",\n  \"photos\": [\n    \"https://images.example.com/room-204.jpg\"\n  ],\n  \"capacity\": 2,\n  \"rent\": 145.5,\n  \"count\": 3,\n  \"amenities\": [\n    \"Wi-Fi\",\n    \"Breakfast\"\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/api/admin/rooms"
+      }
+    },
+    {
+      "name": "Create booking and mock payment (Ordinary)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{ordinaryToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fromdate\": \"2027-01-10\",\n  \"todate\": \"2027-01-12\",\n  \"guests\": 2,\n  \"roomid\": \"{{roomObjectId}}\",\n  \"cardDetails\": {\n    \"cardholdername\": \"Morgan Lee\",\n    \"cardNumber\": \"4242 4242 4242 4242\",\n    \"expmonthyear\": \"12/30\",\n    \"cvv\": \"123\"\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/api/bookings"
+      }
+    },
+    {
+      "name": "My bookings (Ordinary)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{ordinaryToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/bookings/my?page=1&limit=20"
+      }
+    },
+    {
+      "name": "Cancel booking (Ordinary)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{ordinaryToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"bookingId\": \"{{bookingId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/api/bookings/cancel"
+      }
+    },
+    {
+      "name": "Admin all bookings",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/admin/bookings"
+      }
+    },
+    {
+      "name": "Admin all rooms",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/admin/rooms"
+      }
+    },
+    {
+      "name": "Admin edit room",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"rent\": 155,\n  \"count\": 4,\n  \"photos\": [\"https://images.example.com/room-updated.jpg\"]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/api/admin/rooms/{{roomObjectId}}"
+      }
+    },
+    {
+      "name": "Admin delete room",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/admin/rooms/{{roomObjectId}}"
+      }
+    },
+    {
+      "name": "Admin all users",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/admin/users?page=1&limit=50"
+      }
     }
   ],
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:5000" },
-    { "key": "token", "value": "" }
+    {
+      "key": "baseUrl",
+      "value": "https://your-api.onrender.com"
+    },
+    {
+      "key": "ordinaryToken",
+      "value": ""
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "adminEmail",
+      "value": ""
+    },
+    {
+      "key": "adminPassword",
+      "value": ""
+    },
+    {
+      "key": "adminSignupCode",
+      "value": ""
+    },
+    {
+      "key": "roomObjectId",
+      "value": "REPLACE_WITH_ROOM_ID"
+    },
+    {
+      "key": "bookingId",
+      "value": "REPLACE_WITH_BOOKING_ID"
+    }
   ]
 }

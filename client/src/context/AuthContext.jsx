@@ -2,14 +2,26 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { api, TOKEN_STORAGE_KEY } from '../api/client.js';
 
 const AuthContext = createContext(null);
+const USER_STORAGE_KEY = 'hotelpro-user';
+
+function readSavedUser() {
+  if (!localStorage.getItem(TOKEN_STORAGE_KEY)) return null;
+  try {
+    return JSON.parse(localStorage.getItem(USER_STORAGE_KEY) ?? 'null');
+  } catch {
+    localStorage.removeItem(USER_STORAGE_KEY);
+    return null;
+  }
+}
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(readSavedUser);
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_STORAGE_KEY));
   const [loading, setLoading] = useState(true);
 
   const clearSession = useCallback(() => {
     localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem(USER_STORAGE_KEY);
     setToken(null);
     setUser(null);
   }, []);
@@ -37,6 +49,7 @@ export function AuthProvider({ children }) {
         if (isMounted && localStorage.getItem(TOKEN_STORAGE_KEY) === savedToken) {
           setToken(savedToken);
           setUser(data.user);
+          localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
         }
       })
       .catch(() => {
@@ -51,6 +64,7 @@ export function AuthProvider({ children }) {
 
   const saveSession = useCallback((data) => {
     localStorage.setItem(TOKEN_STORAGE_KEY, data.token);
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
     setToken(data.token);
     setUser(data.user);
     return data.user;
@@ -61,10 +75,15 @@ export function AuthProvider({ children }) {
     return saveSession(data);
   }, [saveSession]);
 
-  const register = useCallback(async (formValues) => {
-    const { data } = await api.post('/auth/register', formValues);
+  const adminLogin = useCallback(async (email, password) => {
+    const { data } = await api.post('/auth/admin-login', { email, password });
     return saveSession(data);
   }, [saveSession]);
+
+  const register = useCallback(async (formValues) => {
+    const { data } = await api.post('/auth/signup', formValues);
+    return data.user;
+  }, []);
 
   const value = useMemo(() => ({
     user,
@@ -72,9 +91,10 @@ export function AuthProvider({ children }) {
     loading,
     isAuthenticated: Boolean(user && token),
     login,
+    adminLogin,
     register,
     logout: clearSession,
-  }), [user, token, loading, login, register, clearSession]);
+  }), [user, token, loading, login, adminLogin, register, clearSession]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

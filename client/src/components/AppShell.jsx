@@ -52,24 +52,25 @@ export default function AppShell() {
 
           <div className={`nav-content${menuOpen ? ' nav-content-open' : ''}`}>
             <div className="nav-links">
-              <HeaderLink to="/rooms" onClick={closeMenu}>Find a room</HeaderLink>
-              {user && <HeaderLink to="/my-bookings" onClick={closeMenu}>My bookings</HeaderLink>}
-              {user?.role === 'admin' && <HeaderLink to="/admin" onClick={closeMenu}>Dashboard</HeaderLink>}
+              {!user && <HeaderLink to="/" onClick={closeMenu}>Home</HeaderLink>}
+              {user?.userType === 'Ordinary' && <HeaderLink to="/rooms" onClick={closeMenu}>Rooms</HeaderLink>}
+              {user?.userType === 'Ordinary' && <HeaderLink to="/my-bookings" onClick={closeMenu}>My bookings</HeaderLink>}
+              {user?.userType === 'Admin' && <HeaderLink to="/admin" onClick={closeMenu}>Dashboard</HeaderLink>}
             </div>
 
             <div className="nav-actions">
               {user ? (
                 <>
-                  <span className="nav-greeting">Hello, {user.name.split(' ')[0]}</span>
+                  <span className="nav-greeting">Hi, {user.name.split(' ')[0]}</span>
                   <button className="btn btn-outline-dark btn-sm rounded-pill px-3" type="button" onClick={handleLogout}>
-                    Sign out
+                    Logout
                   </button>
                 </>
               ) : (
                 <>
                   <HeaderLink to="/login" onClick={closeMenu}>Log in</HeaderLink>
                   <Link className="btn btn-dark btn-sm rounded-pill px-3" to="/register" onClick={closeMenu}>
-                    Create account
+                    Sign up
                   </Link>
                 </>
               )}

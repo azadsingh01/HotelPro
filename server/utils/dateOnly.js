@@ -17,11 +17,11 @@ export function parseDateOnly(value) {
   return date;
 }
 
-/** Validate a stay and return its dates, night count, and unique night keys. */
+/** Validate a stay and return its UTC dates and number of nights. */
 export function createStayDates(
   checkInValue,
   checkOutValue,
-  { maxNights, futureOnly = false, includeReservedNights = false } = {},
+  { maxNights, futureOnly = false } = {},
 ) {
   const checkIn = parseDateOnly(checkInValue);
   const checkOut = parseDateOnly(checkOutValue);
@@ -49,22 +49,18 @@ export function createStayDates(
     }
   }
 
-  const reservedNights = includeReservedNights
-    ? Array.from({ length: nights }, (_value, index) => (
-      new Date(checkIn.getTime() + index * MILLISECONDS_PER_DAY)
-    ))
-    : undefined;
-
-  return { checkIn, checkOut, nights, reservedNights };
+  return { checkIn, checkOut, nights };
 }
 
 /** Validate the optional or required check-in/check-out pair on a request. */
 export function validateStayDates(
   source,
-  { required = false, maxNights, futureOnly = false, includeReservedNights = false } = {},
+  { required = false, maxNights, futureOnly = false } = {},
 ) {
   return function checkStayDates(request, _response, next) {
-    const { checkIn, checkOut } = request[source] ?? {};
+    const sourceData = request[source] ?? {};
+    const checkIn = sourceData.fromdate ?? sourceData.checkIn;
+    const checkOut = sourceData.todate ?? sourceData.checkOut;
     const hasCheckIn = checkIn !== undefined;
     const hasCheckOut = checkOut !== undefined;
 
@@ -73,14 +69,13 @@ export function validateStayDates(
     }
 
     if (hasCheckIn !== hasCheckOut) {
-      return next(new ApiError(400, 'Provide both checkIn and checkOut dates.'));
+      return next(new ApiError(400, 'Provide both fromdate and todate values.'));
     }
 
     try {
       request.stayDates = createStayDates(checkIn, checkOut, {
         maxNights,
         futureOnly,
-        includeReservedNights,
       });
       return next();
     } catch (error) {
@@ -91,10 +86,10 @@ export function validateStayDates(
 
 /** Validate that a supplied min/max price filter is in ascending order. */
 export function validatePriceRange(request, _response, next) {
-  const { minPrice, maxPrice } = request.query ?? {};
+  const { minRent, maxRent } = request.query ?? {};
 
-  if (minPrice !== undefined && maxPrice !== undefined && Number(minPrice) > Number(maxPrice)) {
-    return next(new ApiError(400, 'minPrice cannot be greater than maxPrice.'));
+  if (minRent !== undefined && maxRent !== undefined && Number(minRent) > Number(maxRent)) {
+    return next(new ApiError(400, 'minRent cannot be greater than maxRent.'));
   }
 
   return next();

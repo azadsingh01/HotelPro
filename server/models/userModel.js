@@ -11,34 +11,40 @@ const addressSchema = new mongoose.Schema({
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true,
+    required: [true, 'Name is required.'],
     trim: true,
     minlength: 2,
     maxlength: 80,
+    validate: {
+      validator(value) { return typeof value === 'string' && value.trim().length >= 2; },
+      message: 'Name must contain at least 2 characters.',
+    },
   },
   email: {
     type: String,
-    required: true,
+    required: [true, 'Email is required.'],
     unique: true,
     lowercase: true,
     trim: true,
     maxlength: 254,
+    match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Enter a valid email address.'],
   },
   password: {
     type: String,
-    required: true,
+    required: [true, 'Password is required.'],
     select: false,
   },
-  role: {
+  userType: {
     type: String,
-    enum: ['guest', 'staff', 'admin'],
-    default: 'guest',
-    required: true,
+    enum: { values: ['Ordinary', 'Admin'], message: 'User type must be Ordinary or Admin.' },
+    default: 'Ordinary',
+    required: [true, 'User type is required.'],
   },
   phone: {
     type: String,
+    required: [true, 'Phone is required.'],
     trim: true,
-    maxlength: 32,
+    match: [/^\d{10,15}$/, 'Phone must contain 10 to 15 digits.'],
   },
   address: {
     type: addressSchema,
@@ -59,7 +65,7 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-userSchema.index({ role: 1, isActive: 1 });
+userSchema.index({ userType: 1, isActive: 1 });
 
 const User = mongoose.model('User', userSchema);
 

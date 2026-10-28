@@ -1,6 +1,6 @@
 import ApiError from '../utils/ApiError.js';
 import { verifyAccessToken } from '../utils/authToken.js';
-import User from '../models/User.js';
+import User from '../models/userModel.js';
 
 /** Require a valid bearer token and load its current user record. */
 export async function authenticate(request, _response, next) {
