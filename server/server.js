@@ -4,8 +4,7 @@ import mongoose from 'mongoose';
 import { connectDB } from './config/db.js';
 import { validateJwtConfiguration } from './utils/authToken.js';
 
-const port = Number(process.env.PORT) || 5000;
-const host = process.env.HOST || '0.0.0.0';
+const PORT = process.env.PORT || 5000;
 let httpServer;
 let isShuttingDown = false;
 
@@ -13,8 +12,8 @@ async function startServer() {
   validateJwtConfiguration();
   await connectDB();
 
-  httpServer = app.listen(port, host, () => {
-    console.log(`HotelPro API is listening on http://${host}:${port}`);
+  httpServer = app.listen(Number(PORT), () => {
+    console.log(`HotelPro API is listening on port ${PORT}`);
   });
 }
 
@@ -38,6 +37,6 @@ process.once('SIGINT', () => { void shutdown('SIGINT'); });
 process.once('SIGTERM', () => { void shutdown('SIGTERM'); });
 
 startServer().catch((error) => {
-  console.error('Could not start the HotelPro API:', error.message);
+  console.error('Could not start the HotelPro API:', error);
   process.exit(1);
 });

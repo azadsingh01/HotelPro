@@ -28,19 +28,19 @@ function registerConnectionListeners() {
 
 /** Connect once using the configured URI, then ensure model indexes exist. */
 export async function connectDB() {
-  const uri = process.env.MONGODB_URI;
+  const uri = process.env.MONGO_URI;
   if (!uri) {
-    console.error('MONGODB_URI is missing. Set it in server/.env before starting HotelPro.');
-    process.exit(1);
+    const error = new Error('MONGO_URI is not set');
+    console.error(error.message);
+    throw error;
   }
 
   registerConnectionListeners();
   try {
     await mongoose.connect(uri, { serverSelectionTimeoutMS: 10000 });
   } catch (error) {
-    console.error('Could not connect to MongoDB. Check Atlas Network Access (allow the server IP; 0.0.0.0/0 is broad access), verify the database username and password, and URL-encode special characters in the password.');
-    console.error('MongoDB connection detail:', safeConnectionError(error));
-    process.exit(1);
+    console.error('Could not connect to MongoDB:', error);
+    throw error;
   }
 
   await Promise.all([User.createIndexes(), Room.createIndexes(), Booking.createIndexes()]);
